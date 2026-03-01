@@ -1,33 +1,43 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.1/dist/mindar-image-aframe.prod.js"></script>
     <style>
-      body { margin: 0; overflow: hidden; background: none; }
-      /* 强制显示加载状态，直到识别库加载完毕 */
+      /* 核心：强制所有容器占满 100% 高度且无溢出 */
+      body, html { 
+        margin: 0; padding: 0; width: 100%; height: 100%; 
+        overflow: hidden; background: none !important;
+      }
+
+      /* 强制 AR 场景占满屏幕，防止半截白屏 */
+      a-scene {
+        width: 100vw !important; height: 100vh !important;
+        position: absolute; top: 0; left: 0;
+      }
+
+      /* 状态提示 UI */
       #status-indicator {
-        position: fixed; top: 10px; left: 10px; padding: 8px;
-        background: rgba(0,0,0,0.6); color: white; z-index: 10000; font-size: 12px;
+        position: fixed; top: env(safe-area-inset-top, 20px); left: 10px; 
+        padding: 10px; border-radius: 5px;
+        background: rgba(0,0,0,0.7); color: white; z-index: 10000; font-size: 14px;
       }
     </style>
   </head>
   <body>
-    <div id="status-indicator">正在初始化引擎...</div>
+    <div id="status-indicator">系统初始化中...</div>
 
     <a-scene 
-      mindar-image="imageTargetSrc: ./targets.mind?v=999; autoStart: true; uiLoading: yes; uiScanning: yes;" 
-      embedded
-      color-space="sRGB"
-      renderer="colorManagement: true, physicallyCorrectLights"
+      mindar-image="imageTargetSrc: ./targets.mind?v=111; autoStart: true; uiLoading: no; uiScanning: yes;" 
+      renderer="alpha: true; colorManagement: true, physicallyCorrectLights"
       vr-mode-ui="enabled: false"
       device-orientation-permission-ui="enabled: false">
       
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
       <a-entity mindar-image-target="targetIndex: 0">
-        <a-box position="0 0 0.1" scale="0.4 0.4 0.4" material="color: #FF0000;"></a-box>
+        <a-box position="0 0 0.1" scale="0.5 0.5 0.5" material="color: #FF0000; emissive: #FF0000;"></a-box>
       </a-entity>
     </a-scene>
 
@@ -35,24 +45,20 @@
       const sceneEl = document.querySelector('a-scene');
       const indicator = document.getElementById('status-indicator');
 
-      // 1. 检查 AR 是否准备好（识别库加载成功）
-      sceneEl.addEventListener("arReady", (event) => {
-        indicator.innerHTML = "识别库加载成功！请对准海报";
-        indicator.style.background = "green";
-        console.log("MindAR Ready");
+      sceneEl.addEventListener("arReady", () => {
+        indicator.innerHTML = "资源就绪！请对准海报";
+        indicator.style.background = "#28a745";
       });
 
-      // 2. 检查加载错误
-      sceneEl.addEventListener("arError", (event) => {
-        indicator.innerHTML = "识别库加载失败或权限拒绝";
-        indicator.style.background = "red";
-      });
-
-      // 3. 检查是否扫到
       const targetEl = document.querySelector('[mindar-image-target]');
       targetEl.addEventListener("targetFound", () => {
-        indicator.innerHTML = "已识别！模型应已出现";
-        indicator.style.background = "blue";
+        indicator.innerHTML = "【已识别】模型已出现在海报上";
+        indicator.style.background = "#007bff";
+      });
+
+      targetEl.addEventListener("targetLost", () => {
+        indicator.innerHTML = "目标丢失，请重新对准";
+        indicator.style.background = "#ffc107";
       });
     </script>
   </body>
